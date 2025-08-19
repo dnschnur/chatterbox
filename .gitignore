@@ -1,5 +1,8 @@
 .vscode
 
+# Mac
+.DS_Store
+
 # Pylance
 pyrightconfig.json
 
