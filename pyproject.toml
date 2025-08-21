@@ -1,12 +1,12 @@
 [project]
-name = "chatterbox-tts"
-version = "0.1.2"
+name = "chatterbox-mps"
+version = "0.0.2"
 description = "Chatterbox MPS: Resemble AI's TTS optimized for Apple Silicon"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 license = {file = "LICENSE"}
 authors = [
-    {name = "resemble-ai", email = "engineering@resemble.ai"}
+    {name = "resemble-ai", email = "engineering@resemble.ai"},
     {name = "dnschnur", email = "dnschnur@gmail.com"}
 ]
 dependencies = [
