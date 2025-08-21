@@ -1,12 +1,13 @@
 [project]
 name = "chatterbox-tts"
 version = "0.1.2"
-description = "Chatterbox: Open Source TTS and Voice Conversion by Resemble AI"
+description = "Chatterbox MPS: Resemble AI's TTS optimized for Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
 authors = [
     {name = "resemble-ai", email = "engineering@resemble.ai"}
+    {name = "dnschnur", email = "dnschnur@gmail.com"}
 ]
 dependencies = [
     "numpy==2.2",
@@ -21,8 +22,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/resemble-ai/chatterbox"
-Repository = "https://github.com/resemble-ai/chatterbox"
+Homepage = "https://github.com/dnschnur/chatterbox"
+Repository = "https://github.com/dnschnur/chatterbox"
 
 [build-system]
 requires = ["setuptools>=61.0"]

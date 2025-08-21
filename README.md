@@ -1,4 +1,4 @@
-# Chatterbox TTS MPS
+# Chatterbox MPS
 
 A fork of https://github.com/resemble-ai/chatterbox optimized for Apple Silicon.
 
