@@ -34,6 +34,7 @@ PRETRAINED_FILES = [
 
 # System constants
 DEVICE = torch.device('mps')
+DTYPE = torch.bfloat16
 
 # Punctuation that's output by LLMs or uncommon in the dataset.
 UNCOMMON_PUNCTUATION = str.maketrans({
@@ -85,7 +86,7 @@ class Conditionals:
   t3: T3Cond
   gen: dict
 
-  def to(self, device):
+  def to(self, device: torch.device):
     self.t3 = self.t3.to(device=device)
     for k, v in self.gen.items():
       if torch.is_tensor(v):
@@ -157,11 +158,16 @@ class TTS:
     if 'model' in t3_state.keys():
       t3_state = t3_state['model'][0]
     t3.load_state_dict(t3_state)
-    t3.to(DEVICE).eval()
+    t3.to(device=DEVICE, dtype=DTYPE).eval()
 
     s3gen = S3Gen()
     s3gen.load_state_dict(load_file(checkpoint_path / 's3gen.safetensors'), strict=False)
-    s3gen.to(DEVICE).eval()
+    s3gen.to(device=DEVICE, dtype=torch.float16).eval()  # Doesn't support bfloat16
+
+    s3gen.flow.fp16 = True
+    s3gen.mel2wav.to(dtype=torch.float32)
+    s3gen.tokenizer.to(dtype=torch.float32)
+    s3gen.speaker_encoder.to(dtype=torch.float32)
 
     tokenizer = EnTokenizer(str(checkpoint_path / 'tokenizer.json'))
 
@@ -185,7 +191,7 @@ class TTS:
           speaker_emb=ve_embed,
           cond_prompt_speech_tokens=t3_cond_prompt_tokens,
           emotion_adv=0.5 * torch.ones(1, 1, 1),
-      ).to(device=DEVICE)
+      ).to(device=DEVICE, dtype=DTYPE)
       conds = Conditionals(t3_cond, s3gen_ref_dict)
     elif (builtin_voice := checkpoint_path / 'conds.pt').exists():
       conds = Conditionals.load(builtin_voice).to(DEVICE)
@@ -215,7 +221,7 @@ class TTS:
           speaker_emb=_cond.speaker_emb,
           cond_prompt_speech_tokens=_cond.cond_prompt_speech_tokens,
           emotion_adv=exaggeration * torch.ones(1, 1, 1),
-      ).to(device=DEVICE)
+      ).to(device=DEVICE, dtype=DTYPE)
 
     text_tokens = self.tokenizer.text_to_tokens(clean_text(text)).to(DEVICE)
 
