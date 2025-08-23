@@ -1,10 +1,5 @@
-try:
-    from importlib.metadata import version
-except ImportError:
-    from importlib_metadata import version  # For Python <3.8
+from importlib.metadata import version
 
 __version__ = version("chatterbox-mps")
 
-
 from .tts import TTS
-from .vc import ChatterboxVC
