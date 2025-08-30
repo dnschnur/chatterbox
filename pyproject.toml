@@ -10,8 +10,7 @@ authors = [
     {name = "dnschnur", email = "dnschnur@gmail.com"}
 ]
 dependencies = [
-    "numpy==2.2",
-    "librosa",
+    "numpy",
     "s3tokenizer",
     "torch",
     "torchaudio",

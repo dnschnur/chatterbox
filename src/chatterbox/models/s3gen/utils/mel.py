@@ -1,21 +1,12 @@
 """mel-spectrogram extraction in Matcha-TTS"""
-from librosa.filters import mel as librosa_mel_fn
-import torch
+
 import numpy as np
+import torch
+import torchaudio
 
-
-# NOTE: they decalred these global vars
 mel_basis = {}
 hann_window = {}
 
-
-def dynamic_range_compression_torch(x, C=1, clip_val=1e-5):
-    return torch.log(torch.clamp(x, min=clip_val) * C)
-
-
-def spectral_normalize_torch(magnitudes):
-    output = dynamic_range_compression_torch(magnitudes)
-    return output
 
 """
 feat_extractor: !name:matcha.utils.audio.mel_spectrogram
@@ -27,7 +18,6 @@ feat_extractor: !name:matcha.utils.audio.mel_spectrogram
     fmin: 0
     fmax: 8000
     center: False
-
 """
 
 def mel_spectrogram(y, n_fft=1920, num_mels=80, sampling_rate=24000, hop_size=480, win_size=1920,
@@ -49,8 +39,16 @@ def mel_spectrogram(y, n_fft=1920, num_mels=80, sampling_rate=24000, hop_size=48
 
     global mel_basis, hann_window  # pylint: disable=global-statement,global-variable-not-assigned
     if f"{str(fmax)}_{str(y.device)}" not in mel_basis:
-        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
-        mel_basis[str(fmax) + "_" + str(y.device)] = torch.from_numpy(mel).float().to(y.device)
+        mel = torchaudio.functional.melscale_fbanks(
+            n_freqs=int(n_fft // 2 + 1),
+            f_min=fmin,
+            f_max=fmax,
+            n_mels=num_mels,
+            sample_rate=sampling_rate,
+            norm="slaney",
+            mel_scale="slaney").T
+
+        mel_basis[str(fmax) + "_" + str(y.device)] = mel.to(y.device)
         hann_window[str(y.device)] = torch.hann_window(win_size).to(y.device)
 
     y = torch.nn.functional.pad(
@@ -74,8 +72,5 @@ def mel_spectrogram(y, n_fft=1920, num_mels=80, sampling_rate=24000, hop_size=48
     )
 
     spec = torch.sqrt(spec.pow(2).sum(-1) + (1e-9))
-
-    spec = torch.matmul(mel_basis[str(fmax) + "_" + str(y.device)], spec)
-    spec = spectral_normalize_torch(spec)
-
-    return spec
+    spec = mel_basis[str(fmax) + "_" + str(y.device)] @ spec
+    return torch.log(torch.clamp(spec, min=1e-5))
