@@ -58,6 +58,7 @@ def extract_feature(audio):
     return features_padded, feature_lengths, feature_times
 
 
+@torch.compile(fullgraph=True)
 class BasicResBlock(torch.nn.Module):
     expansion = 1
 
@@ -91,6 +92,7 @@ class BasicResBlock(torch.nn.Module):
         return out
 
 
+@torch.compile(fullgraph=True)
 class FCM(torch.nn.Module):
     def __init__(self, block=BasicResBlock, num_blocks=[2, 2], m_channels=32, feat_dim=80):
         super(FCM, self).__init__()
@@ -152,11 +154,13 @@ def statistics_pooling(x, dim=-1, keepdim=False, unbiased=True, eps=1e-2):
     return stats
 
 
+@torch.compile(fullgraph=True)
 class StatsPool(torch.nn.Module):
     def forward(self, x):
         return statistics_pooling(x)
 
 
+@torch.compile(fullgraph=True)
 class TDNNLayer(torch.nn.Module):
     def __init__(
         self,
@@ -192,6 +196,7 @@ class TDNNLayer(torch.nn.Module):
         return x
 
 
+@torch.compile(fullgraph=True)
 class CAMLayer(torch.nn.Module):
     def __init__(
         self, bn_channels, out_channels, kernel_size, stride, padding, dilation, bias, reduction=2
@@ -231,6 +236,7 @@ class CAMLayer(torch.nn.Module):
         return seg
 
 
+@torch.compile(fullgraph=True)
 class CAMDenseTDNNLayer(torch.nn.Module):
     def __init__(
         self,
@@ -275,6 +281,7 @@ class CAMDenseTDNNLayer(torch.nn.Module):
         return x
 
 
+@torch.compile(fullgraph=True)
 class CAMDenseTDNNBlock(torch.nn.ModuleList):
     def __init__(
         self,
@@ -310,6 +317,7 @@ class CAMDenseTDNNBlock(torch.nn.ModuleList):
         return x
 
 
+@torch.compile(fullgraph=True)
 class TransitLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, bias=True, config_str="batchnorm-relu"):
         super(TransitLayer, self).__init__()
@@ -322,6 +330,7 @@ class TransitLayer(torch.nn.Module):
         return x
 
 
+@torch.compile(fullgraph=True)
 class DenseLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, bias=False, config_str="batchnorm-relu"):
         super(DenseLayer, self).__init__()
@@ -337,6 +346,7 @@ class DenseLayer(torch.nn.Module):
         return x
 
 # @tables.register("model_classes", "CAMPPlus")
+@torch.compile(fullgraph=True)
 class CAMPPlus(torch.nn.Module):
     def __init__(
         self,

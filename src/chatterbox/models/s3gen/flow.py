@@ -21,6 +21,7 @@ from .utils.mask import make_pad_mask
 from .configs import CFM_PARAMS
 
 
+@torch.compile(fullgraph=True)
 class MaskedDiffWithXvec(torch.nn.Module):
     def __init__(
         self,
@@ -172,6 +173,7 @@ class MaskedDiffWithXvec(torch.nn.Module):
         return feat.float(), flow_cache
 
 
+@torch.compile(fullgraph=True)
 class CausalMaskedDiffWithXvec(torch.nn.Module):
     def __init__(
         self,

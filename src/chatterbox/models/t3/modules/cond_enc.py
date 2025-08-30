@@ -38,6 +38,7 @@ class T3Cond:
         return T3Cond(**kwargs)
 
 
+@torch.compile(fullgraph=True)
 class T3CondEnc(nn.Module):
     """
     Handle all non-text conditioning, like speaker embeddings / prompts, CLAP, emotion, etc.

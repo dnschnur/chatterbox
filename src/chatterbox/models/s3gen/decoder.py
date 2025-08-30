@@ -34,6 +34,7 @@ def mask_to_bias(mask: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
 
 
 
+@torch.compile(fullgraph=True)
 class Transpose(torch.nn.Module):
     def __init__(self, dim0: int, dim1: int):
         super().__init__()
@@ -45,6 +46,7 @@ class Transpose(torch.nn.Module):
         return x
 
 
+@torch.compile(fullgraph=True)
 class CausalBlock1D(Block1D):
     def __init__(self, dim: int, dim_out: int):
         super(CausalBlock1D, self).__init__(dim, dim_out)
@@ -61,6 +63,7 @@ class CausalBlock1D(Block1D):
         return output * mask
 
 
+@torch.compile(fullgraph=True)
 class CausalResnetBlock1D(ResnetBlock1D):
     def __init__(self, dim: int, dim_out: int, time_emb_dim: int, groups: int = 8):
         super(CausalResnetBlock1D, self).__init__(dim, dim_out, time_emb_dim, groups)
@@ -68,6 +71,7 @@ class CausalResnetBlock1D(ResnetBlock1D):
         self.block2 = CausalBlock1D(dim_out, dim_out)
 
 
+@torch.compile(fullgraph=True)
 class CausalConv1d(torch.nn.Conv1d):
     def __init__(
         self,
@@ -97,6 +101,7 @@ class CausalConv1d(torch.nn.Conv1d):
         return x
 
 
+@torch.compile(fullgraph=True)
 class ConditionalDecoder(nn.Module):
     def __init__(
         self,

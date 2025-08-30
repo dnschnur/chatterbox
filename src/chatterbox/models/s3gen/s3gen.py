@@ -44,6 +44,7 @@ def get_resampler(src_sr, dst_sr, device):
     return ta.transforms.Resample(src_sr, dst_sr).to(device)
 
 
+@torch.compile(fullgraph=True)
 class S3Token2Mel(torch.nn.Module):
     """
     CosyVoice2's CFM decoder maps S3 speech tokens to mel-spectrograms.
@@ -209,6 +210,7 @@ class S3Token2Mel(torch.nn.Module):
         return output_mels
 
 
+@torch.compile(fullgraph=True)
 class S3Token2Wav(S3Token2Mel):
     """
     The decoder of CosyVoice2 is a concat of token-to-mel (CFM) and a mel-to-waveform (HiFiGAN) modules.

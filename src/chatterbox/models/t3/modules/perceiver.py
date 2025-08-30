@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from einops import rearrange
 
 
+@torch.compile(fullgraph=True)
 class RelativePositionBias(nn.Module):
     def __init__(self, scale, causal=False, num_buckets=32, max_distance=128, heads=8):
         super().__init__()
@@ -52,6 +53,7 @@ class RelativePositionBias(nn.Module):
         return qk_dots + (bias * self.scale)
 
 
+@torch.compile(fullgraph=True)
 class AttentionQKV(nn.Module):
     def __init__(self, n_heads, head_dim, dropout_rate=0.1, scale=None, flash=False):
         super().__init__()
@@ -110,6 +112,7 @@ class AttentionQKV(nn.Module):
         return x.view(bs, length, -1)
 
 
+@torch.compile(fullgraph=True)
 class AttentionBlock2(nn.Module):
     """
     An attention block that allows spatial positions to attend to each other,
@@ -170,6 +173,7 @@ class AttentionBlock2(nn.Module):
         return (x1 + h).reshape(b1, c1, *spatial1)
 
 
+@torch.compile(fullgraph=True)
 class Perceiver(nn.Module):
     """Inspired by https://arxiv.org/abs/2103.03206"""
     def __init__(self, pre_attention_query_token=32, pre_attention_query_size=1024, embedding_dim=1024, num_attn_heads=4):

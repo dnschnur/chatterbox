@@ -28,6 +28,7 @@ def _ensure_BOT_EOT(text_tokens: Tensor, hp):
     assert (text_tokens == hp.stop_text_token).int().sum() >= B, "missing stop_text_token"
 
 
+@torch.compile(fullgraph=True)
 class T3(nn.Module):
     """
     Token-To-Token (T3) TTS model using huggingface transformer models as backbones,
