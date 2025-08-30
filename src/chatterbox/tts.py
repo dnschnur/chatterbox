@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import io
 import random
 import os
 import wave
@@ -106,6 +107,23 @@ def read_wav(path: Path, device: torch.device) -> tuple[Tensor, int]:
     reference = reference / torch.iinfo(wav_dtype).max
 
   return reference, sample_rate
+
+
+def write_wav(path: Path, audio: Tensor, sample_rate: int):
+  """Writes the given audio data to the given path as a 16-bit PCM WAV file."""
+  # If the audio is stereo, interleave the left and right samples.
+  if audio.dim() == 2:
+    audio = audio.permute(1, 0).flatten()
+
+  # Normalize and scale to the correct range before converting to int16.
+  audio = torch.clamp(audio, min=-1.0, max=1.0) * 32767.0
+  audio = audio.to(dtype=torch.int16)
+
+  with wave.open(str(path), 'wb') as wav:
+    wav.setframerate(sample_rate)
+    wav.setnchannels(audio.dim())
+    wav.setsampwidth(2)
+    wav.writeframes(audio.numpy().tobytes())
 
 
 @dataclass
@@ -294,7 +312,8 @@ class TTS:
 
       wav, _ = self.s3gen.inference(speech_tokens=speech_tokens, ref_dict=self.conds.gen)
 
-    torchaudio.save(output_path, wav.detach().cpu(), S3GEN_SR)
+    print(f'Saving generated audio to {output_path}.')
+    write_wav(output_path, wav.detach().cpu(), S3GEN_SR)
 
 
 def main(args: argparse.Namespace):
