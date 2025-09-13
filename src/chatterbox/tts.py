@@ -233,7 +233,7 @@ class TTS:
         t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens)
 
       # Voice-encoder speaker embedding
-      ve_embed = ve.embeds_from_wavs([s3tok_reference], sample_rate=S3_SR)
+      ve_embed = ve.embeds_from_wav(reference)
       ve_embed = ve_embed.mean(axis=0, keepdims=True)
 
       t3_cond = T3Cond(

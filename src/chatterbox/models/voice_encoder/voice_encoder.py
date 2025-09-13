@@ -6,6 +6,8 @@ import torch
 
 from torch import Tensor
 
+from ..utils import Audio
+
 from .config import VoiceEncConfig
 from .melspec import melspectrogram
 
@@ -184,16 +186,12 @@ class VoiceEncoder(torch.nn.Module):
 
         return self.utt_to_spk_embed(utt_embeds) if as_spk else utt_embeds
 
-    def embeds_from_wavs(
-        self, wavs: list[Tensor], sample_rate: int, as_spk: bool = False, batch_size: int = 32
+    def embeds_from_wav(
+        self, reference: Audio, as_spk: bool = False, batch_size: int = 32
     ) -> Tensor:
         """Returns utterance or speaker embeddings from a list of audio tensors."""
-        if sample_rate != self.hp.sample_rate:
-            resampler = torchaudio.transforms.Resample(
-                orig_freq=sample_rate, new_freq=self.hp.sample_rate).to(self.device)
-            wavs = [resampler.resample(wav) for wav in wavs]
-
-        mels = [melspectrogram(wav, self.hp).T for wav in wavs]
+        audio = reference[self.hp.sample_rate].to(self.device)
+        mels = [melspectrogram(audio, self.hp).T]
 
         # The rate=1.3 is Resemble's default value.
         return self.embeds_from_mels(mels, as_spk=as_spk, batch_size=batch_size, rate=1.3)
