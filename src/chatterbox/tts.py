@@ -40,7 +40,6 @@ PRETRAINED_FILES = [
 
 # Number of reference voice samples to use.
 ENC_COND_LEN = 6 * S3_SR
-DEC_COND_LEN = 10 * S3GEN_SR
 
 # Punctuation that's output by LLMs or uncommon in the dataset.
 UNCOMMON_PUNCTUATION = str.maketrans({
@@ -221,15 +220,12 @@ class TTS:
 
     if voice:
       reference = read_wav(voice, device=DEVICE)
-      s3gen_reference = reference[S3GEN_SR]
-      s3tok_reference = reference[S3_SR]
-
-      s3gen_ref_dict = s3gen.embed_ref(s3gen_reference[:DEC_COND_LEN], S3GEN_SR, device=DEVICE)
+      s3gen_ref_dict = s3gen.embed_ref(reference)
 
       # Speech cond prompt tokens
       if plen := t3.hp.speech_cond_prompt_len:
         t3_cond_prompt_tokens, _ = s3gen.tokenizer.forward(
-            s3tok_reference[:ENC_COND_LEN], max_len=plen)
+            reference[S3_SR][:ENC_COND_LEN], max_len=plen)
         t3_cond_prompt_tokens = torch.atleast_2d(t3_cond_prompt_tokens)
 
       # Voice-encoder speaker embedding
