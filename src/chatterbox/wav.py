@@ -12,6 +12,17 @@ from torch import Tensor
 from .models.utils import Audio
 
 
+def encode_wav(audio: Tensor) -> Tensor:
+  """Converts the given audio tensor into an interleaved 16-bit sample tensor."""
+  # If the audio is stereo, interleave the left and right samples.
+  if audio.dim() == 2:
+    audio = audio.permute(1, 0).flatten()
+
+  # Normalize and scale to the correct range before converting to int16.
+  audio = torch.clamp(audio, min=-1.0, max=1.0) * 32767.0
+  return audio.to(dtype=torch.int16)
+
+
 def read_wav(path: Path, device: torch.device) -> Audio:
   """Reads a .wav file and returns it as a mono (1D) float32 tensor along with its sample rate."""
   with wave.open(str(path), 'rb') as wav:
@@ -42,18 +53,13 @@ def read_wav(path: Path, device: torch.device) -> Audio:
   return Audio(audio, sample_rate)
 
 
-def write_wav(path: Path, audio: Tensor, sample_rate: int):
+def write_wav(path: Path, audio: Tensor, sample_rate: int) -> bytes:
   """Writes the given audio data to the given path as a 16-bit PCM WAV file."""
-  # If the audio is stereo, interleave the left and right samples.
-  if audio.dim() == 2:
-    audio = audio.permute(1, 0).flatten()
-
-  # Normalize and scale to the correct range before converting to int16.
-  audio = torch.clamp(audio, min=-1.0, max=1.0) * 32767.0
-  audio = audio.to(dtype=torch.int16)
-
+  encoded = encode_wav(audio)
+  frames = encoded.numpy().tobytes()
   with wave.open(str(path), 'wb') as wav:
     wav.setframerate(sample_rate)
-    wav.setnchannels(audio.dim())
+    wav.setnchannels(encoded.dim())
     wav.setsampwidth(2)
-    wav.writeframes(audio.numpy().tobytes())
+    wav.writeframes(frames)
+  return frames

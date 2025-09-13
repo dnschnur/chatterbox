@@ -26,7 +26,7 @@ from .models.t3 import T3
 from .models.t3.modules.cond_enc import T3Cond
 from .models.tokenizers import EnTokenizer
 from .models.voice_encoder import VoiceEncoder
-from .wav import read_wav, write_wav
+from .wav import encode_wav, read_wav, write_wav
 
 # System constants
 DEVICE = torch.device('mps')
@@ -205,7 +205,7 @@ class TTS:
   def generate(
     self,
     text: str,
-    output_path: Path,
+    output_path: Path | None = None,
     repetition_penalty: float = 1.2,
     min_p: float = 0.05,
     top_p: float = 1.0,
@@ -213,7 +213,7 @@ class TTS:
     cfg_weight: float = 0.5,
     temperature: float = 0.5,
     show_stats: bool = False,
-  ):
+  ) -> bytes:
     start_time = datetime.now()
     if exaggeration != self.conds.t3.emotion_adv[0, 0, 0]:
       _cond: T3Cond = self.conds.t3
@@ -256,8 +256,13 @@ class TTS:
     if show_stats:
       print(f'Generated {generated_seconds:.2f}s in {duration:.2f}s ({efficiency:.2%}).')
 
-    print(f'Saving generated audio to {output_path}.')
-    write_wav(output_path, audio.detach().cpu(), S3GEN_SR)
+    audio = audio.detach().cpu()
+
+    if output_path:
+      print(f'Saving generated audio to {output_path}.')
+      return write_wav(output_path, audio, S3GEN_SR)
+
+    return encode_wav(audio).numpy().tobytes()
 
 
 def main(args: argparse.Namespace):
@@ -265,7 +270,7 @@ def main(args: argparse.Namespace):
   tts = TTS.from_pretrained(seed=args.seed, voice=args.voice)
   tts.generate(
       args.text,
-      args.output,
+      output_path=args.output,
       exaggeration=args.exaggeration,
       temperature=args.temperature,
       show_stats=True,
