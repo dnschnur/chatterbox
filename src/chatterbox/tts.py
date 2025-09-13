@@ -14,19 +14,19 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torchaudio
 
 from torch import Tensor
 
 from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
-from .models.t3 import T3
 from .models.s3tokenizer import S3_SR, drop_invalid_tokens
 from .models.s3gen import S3GEN_SR, S3Gen
-from .models.tokenizers import EnTokenizer
-from .models.voice_encoder import VoiceEncoder
+from .models.t3 import T3
 from .models.t3.modules.cond_enc import T3Cond
+from .models.tokenizers import EnTokenizer
+from .models.utils import Audio
+from .models.voice_encoder import VoiceEncoder
 
 # System constants
 DEVICE = torch.device('mps')
@@ -37,14 +37,6 @@ HF_REPO_ID = 'ResembleAI/chatterbox'
 
 PRETRAINED_FILES = [
     've.safetensors', 't3_cfg.safetensors', 's3gen.safetensors', 'tokenizer.json', 'conds.pt']
-
-# Parameters for torchaudio's Resample, favoring quality over speed.
-RESAMPLE_PARAMS = {
-  'resampling_method': 'sinc_interp_kaiser',
-  'lowpass_filter_width': 64,
-  'rolloff': 0.9475937167399596,
-  'beta': 14.769656459379492,
-}
 
 # Number of reference voice samples to use.
 ENC_COND_LEN = 6 * S3_SR
@@ -79,7 +71,7 @@ def clean_text(text: str) -> str:
   return text if text.endswith(('.', '!', '?', '-', ',')) else text + '.'
 
 
-def read_wav(path: Path, device: torch.device) -> tuple[Tensor, int]:
+def read_wav(path: Path, device: torch.device) -> Audio:
   """Reads a .wav file and returns it as a mono (1D) float32 tensor along with its sample rate."""
   with wave.open(str(path), 'rb') as wav:
     num_channels = wav.getnchannels()
@@ -106,7 +98,7 @@ def read_wav(path: Path, device: torch.device) -> tuple[Tensor, int]:
   else:
     reference = reference / torch.iinfo(wav_dtype).max
 
-  return reference, sample_rate
+  return Audio(reference, sample_rate)
 
 
 def write_wav(path: Path, audio: Tensor, sample_rate: int):
@@ -228,15 +220,9 @@ class TTS:
     tokenizer = EnTokenizer(str(checkpoint_path / 'tokenizer.json'))
 
     if voice:
-      reference, sample_rate = read_wav(voice, device=DEVICE)
-
-      s3gen_resampler = torchaudio.transforms.Resample(
-          orig_freq=sample_rate, new_freq=S3GEN_SR, **RESAMPLE_PARAMS).to(DEVICE)
-      s3gen_reference = s3gen_resampler(reference)
-
-      s3tok_resampler = torchaudio.transforms.Resample(
-          orig_freq=sample_rate, new_freq=S3_SR, **RESAMPLE_PARAMS).to(DEVICE)
-      s3tok_reference = s3tok_resampler(reference)
+      reference = read_wav(voice, device=DEVICE)
+      s3gen_reference = reference[S3GEN_SR]
+      s3tok_reference = reference[S3_SR]
 
       s3gen_ref_dict = s3gen.embed_ref(s3gen_reference[:DEC_COND_LEN], S3GEN_SR, device=DEVICE)
 
