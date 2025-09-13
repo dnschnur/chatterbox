@@ -10,6 +10,7 @@ import os
 import wave
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -259,7 +260,9 @@ class TTS:
     exaggeration: float = 0.3,
     cfg_weight: float = 0.5,
     temperature: float = 0.5,
+    show_stats: bool = False,
   ):
+    start_time = datetime.now()
     if exaggeration != self.conds.t3.emotion_adv[0, 0, 0]:
       _cond: T3Cond = self.conds.t3
       self.conds.t3 = T3Cond(
@@ -294,6 +297,13 @@ class TTS:
 
       wav, _ = self.s3gen.inference(speech_tokens=speech_tokens, ref_dict=self.conds.gen)
 
+    generated_seconds = len(wav[0]) / S3GEN_SR
+    duration = (datetime.now() - start_time) / timedelta(seconds=1)
+    efficiency = generated_seconds / duration
+
+    if show_stats:
+      print(f'Generated {generated_seconds:.2f}s in {duration:.2f}s ({efficiency:.2%}).')
+
     print(f'Saving generated audio to {output_path}.')
     write_wav(output_path, wav.detach().cpu(), S3GEN_SR)
 
@@ -301,7 +311,13 @@ class TTS:
 def main(args: argparse.Namespace):
   """Initializes Chatterbox with the given voice, if any, and generates the given text."""
   tts = TTS.from_pretrained(seed=args.seed, voice=args.voice)
-  tts.generate(args.text, args.output, exaggeration=args.exaggeration, temperature=args.temperature)
+  tts.generate(
+      args.text,
+      args.output,
+      exaggeration=args.exaggeration,
+      temperature=args.temperature,
+      show_stats=True,
+  )
 
 
 if __name__ == '__main__':
